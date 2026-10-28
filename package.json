@@ -1,0 +1,56 @@
+{
+  "name": "@utilitly/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server that lets AI apps merge, split, rotate, delete, reorder and duplicate PDF pages on your computer. Nothing is uploaded.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "pdf",
+    "merge-pdf",
+    "split-pdf",
+    "claude",
+    "cursor"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "utilitly-mcp": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "leak-check": "node scripts/leak-check.mjs",
+    "check": "npm run leak-check && npm run typecheck && npm run build && npm test",
+    "smoke": "npm run build && node scripts/smoke-install.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.3.1",
+    "@utilitly/pdf-delete-pages": "file:../utilitly-oss/packages/pdf-delete-pages",
+    "@utilitly/pdf-duplicate-pages": "file:../utilitly-oss/packages/pdf-duplicate-pages",
+    "@utilitly/pdf-merge": "file:../utilitly-oss/packages/pdf-merge",
+    "@utilitly/pdf-reorder-pages": "file:../utilitly-oss/packages/pdf-reorder-pages",
+    "@utilitly/pdf-rotate": "file:../utilitly-oss/packages/pdf-rotate",
+    "@utilitly/pdf-split": "file:../utilitly-oss/packages/pdf-split",
+    "pdf-lib": "^1.17.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@neslinesli93/qpdf-wasm": "^0.3.0",
+    "@types/node": "^24.19.2",
+    "publint": "^0.3.25",
+    "tsdown": "^0.23.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^4.1.12"
+  }
+}

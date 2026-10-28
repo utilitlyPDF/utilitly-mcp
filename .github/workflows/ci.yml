@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every Node line that is still supported upstream.
+        node: [22, 24, 26]
+    defaults:
+      run:
+        working-directory: utilitly-mcp
+    steps:
+      # Actions are pinned to a commit so a moved tag can't change what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: utilitly-mcp
+          persist-credentials: false
+      # The server is built on the engines from utilitly-pdf, checked out next
+      # to it as ../utilitly-oss, the same layout as on a developer's machine.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: utilitlyPDF/utilitly-pdf
+          path: utilitly-oss
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: |
+            utilitly-mcp/package-lock.json
+            utilitly-oss/package-lock.json
+      - name: Build the engines
+        working-directory: utilitly-oss
+        run: npm ci && npm run build
+      - run: npm ci
+      # Leak check, typecheck, build, then every test, including the built
+      # server over stdio.
+      - run: npm run check
+      # Installs the engines and this server from their tarballs into a fresh
+      # project, starts the installed bin and calls every tool.
+      - run: npm run smoke

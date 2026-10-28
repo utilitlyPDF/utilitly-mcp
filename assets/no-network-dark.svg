@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="232" viewBox="0 0 840 232" role="img" aria-labelledby="title desc">
+<title id="title">@utilitly/mcp: the no-network test</title>
+<desc id="desc">A test blocks every way to reach the network, then runs all eight tools. Each one completes and the test passes: no connection was opened.</desc>
+<style>
+text { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #e8e8f3; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+.muted { fill: #9a9bb6; }
+.faint { fill: #5d5e7a; }
+.accent { fill: #9a9bfb; }
+.ok { fill: #3fb950; }
+.cmd { animation: cmd 7s steps(1, end) infinite; }
+@keyframes cmd { 0% { opacity: 0; } 3% { opacity: 1; } 94% { opacity: 0; } }
+.blocked { animation: blocked 7s steps(1, end) infinite; }
+@keyframes blocked { 0% { opacity: 0; } 12% { opacity: 1; } 94% { opacity: 0; } }
+.t0 { animation: t0 7s steps(1, end) infinite; }
+@keyframes t0 { 0% { opacity: 0; } 20% { opacity: 1; } 94% { opacity: 0; } }
+.t1 { animation: t1 7s steps(1, end) infinite; }
+@keyframes t1 { 0% { opacity: 0; } 26% { opacity: 1; } 94% { opacity: 0; } }
+.t2 { animation: t2 7s steps(1, end) infinite; }
+@keyframes t2 { 0% { opacity: 0; } 32% { opacity: 1; } 94% { opacity: 0; } }
+.t3 { animation: t3 7s steps(1, end) infinite; }
+@keyframes t3 { 0% { opacity: 0; } 38% { opacity: 1; } 94% { opacity: 0; } }
+.t4 { animation: t4 7s steps(1, end) infinite; }
+@keyframes t4 { 0% { opacity: 0; } 44% { opacity: 1; } 94% { opacity: 0; } }
+.t5 { animation: t5 7s steps(1, end) infinite; }
+@keyframes t5 { 0% { opacity: 0; } 50% { opacity: 1; } 94% { opacity: 0; } }
+.t6 { animation: t6 7s steps(1, end) infinite; }
+@keyframes t6 { 0% { opacity: 0; } 56% { opacity: 1; } 94% { opacity: 0; } }
+.t7 { animation: t7 7s steps(1, end) infinite; }
+@keyframes t7 { 0% { opacity: 0; } 62% { opacity: 1; } 94% { opacity: 0; } }
+.passed { animation: passed 7s ease-out infinite; }
+@keyframes passed { 0%, 70% { opacity: 0; } 74%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+<rect x="0.5" y="0.5" width="839" height="231" rx="16" fill="#11121b" stroke="#2c2d40"/>
+<rect x="24" y="24" width="792" height="184" rx="10" fill="#181926" stroke="#2c2d40"/>
+<text x="48" y="62" font-size="13" class="mono cmd">$ npx vitest run test/network.test.ts</text>
+<text x="48" y="92" font-size="12.5" class="mono muted blocked">net.Socket.connect, dns.lookup and fetch now throw "network used"</text>
+<text x="48" y="122" font-size="12.5" class="mono t0"><tspan class="ok">✓</tspan> pdf_info</text>
+<text x="234" y="122" font-size="12.5" class="mono t1"><tspan class="ok">✓</tspan> merge_pdfs</text>
+<text x="420" y="122" font-size="12.5" class="mono t2"><tspan class="ok">✓</tspan> split_pdf</text>
+<text x="606" y="122" font-size="12.5" class="mono t3"><tspan class="ok">✓</tspan> extract_pages</text>
+<text x="48" y="146" font-size="12.5" class="mono t4"><tspan class="ok">✓</tspan> rotate_pdf</text>
+<text x="234" y="146" font-size="12.5" class="mono t5"><tspan class="ok">✓</tspan> delete_pages</text>
+<text x="420" y="146" font-size="12.5" class="mono t6"><tspan class="ok">✓</tspan> reorder_pages</text>
+<text x="606" y="146" font-size="12.5" class="mono t7"><tspan class="ok">✓</tspan> duplicate_pages</text>
+<text x="48" y="186" font-size="13" font-weight="700" class="mono passed ok">✓ every tool runs with the network blocked</text>
+<text x="792" y="186" font-size="12.5" text-anchor="end" class="mono muted passed">1 passed</text>
+</svg>

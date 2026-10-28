@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="260" viewBox="0 0 840 260" role="img" aria-labelledby="title desc">
+<title id="title">@utilitly/mcp</title>
+<desc id="desc">In an AI chat, someone asks to merge two invoices and remove a blank page. The merge_pdfs and delete_pages tools run on their computer, and the new PDFs appear in the folder next to the untouched originals.</desc>
+<style>
+text { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: #e8e8f3; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+.muted { fill: #9a9bb6; }
+.faint { fill: #5d5e7a; }
+.accent { fill: #9a9bfb; }
+.ok { fill: #3fb950; }
+.ask { animation: ask 9s ease-out infinite; }
+@keyframes ask { 0%, 2% { opacity: 0; transform: translateY(4px); } 5%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+.c1 { animation: c1 9s ease-out infinite; }
+@keyframes c1 { 0%, 16% { opacity: 0; transform: translateY(4px); } 19%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+.f1 { animation: f1 9s ease-out infinite; }
+@keyframes f1 { 0%, 28% { opacity: 0; transform: translateY(4px); } 31%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+.c2 { animation: c2 9s ease-out infinite; }
+@keyframes c2 { 0%, 38% { opacity: 0; transform: translateY(4px); } 41%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+.f2 { animation: f2 9s ease-out infinite; }
+@keyframes f2 { 0%, 50% { opacity: 0; transform: translateY(4px); } 53%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+.done { animation: done 9s ease-out infinite; }
+@keyframes done { 0%, 60% { opacity: 0; transform: translateY(4px); } 63%, 94% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+<rect x="0.5" y="0.5" width="839" height="259" rx="16" fill="#11121b" stroke="#2c2d40"/>
+<rect x="24" y="24" width="484" height="184" rx="10" fill="#181926" stroke="#2c2d40"/>
+<text x="42" y="47" font-size="12" class="muted">your AI app</text>
+<g class="ask"><rect x="150" y="58" width="342" height="44" rx="12" fill="#26274a"/>
+<text x="164" y="76" font-size="12.5">Merge march.pdf and april.pdf in Documents,</text>
+<text x="164" y="93" font-size="12.5">then delete the blank page 3.</text></g>
+<g class="c1"><rect x="42" y="114" width="154" height="24" rx="12" fill="#11121b" stroke="#2c2d40"/>
+<text x="56" y="130" font-size="12" class="mono">merge_pdfs <tspan class="ok">✓</tspan></text></g>
+<g class="c2"><rect x="204" y="114" width="164" height="24" rx="12" fill="#11121b" stroke="#2c2d40"/>
+<text x="218" y="130" font-size="12" class="mono">delete_pages <tspan class="ok">✓</tspan></text></g>
+<g class="done"><text x="42" y="164" font-size="12.5">Done. The new file is march-merged-trimmed.pdf,</text>
+<text x="42" y="182" font-size="12.5">next to your originals, which weren't changed.</text></g>
+<rect x="524" y="24" width="292" height="184" rx="10" fill="#181926" stroke="#2c2d40"/>
+<text x="542" y="47" font-size="12" class="mono muted">~/Documents</text>
+<rect x="532" y="61" width="272" height="26" rx="6" fill="none"/>
+<rect x="542" y="67" width="12" height="15" rx="2" fill="#181926" stroke="#ff6b6f" stroke-width="1.5"/>
+<text x="562" y="78" font-size="12.5" class="mono">march.pdf</text>
+
+<rect x="532" y="91" width="272" height="26" rx="6" fill="none"/>
+<rect x="542" y="97" width="12" height="15" rx="2" fill="#181926" stroke="#ff6b6f" stroke-width="1.5"/>
+<text x="562" y="108" font-size="12.5" class="mono">april.pdf</text>
+
+<g class="f1"><rect x="532" y="121" width="272" height="26" rx="6" fill="#173322"/>
+<rect x="542" y="127" width="12" height="15" rx="2" fill="#181926" stroke="#ff6b6f" stroke-width="1.5"/>
+<text x="562" y="138" font-size="12.5" class="mono">march-merged.pdf</text>
+<text x="792" y="138" font-size="11" text-anchor="end" class="ok" font-weight="600">new</text></g>
+<g class="f2"><rect x="532" y="151" width="272" height="26" rx="6" fill="#173322"/>
+<rect x="542" y="157" width="12" height="15" rx="2" fill="#181926" stroke="#ff6b6f" stroke-width="1.5"/>
+<text x="562" y="168" font-size="12.5" class="mono">march-merged-trimmed.pdf</text>
+<text x="792" y="168" font-size="11" text-anchor="end" class="ok" font-weight="600">new</text></g>
+<text x="36" y="238" font-size="14" class="mono">npx -y @utilitly/mcp</text>
+<text x="804" y="238" font-size="12.5" text-anchor="end" class="muted">runs on your computer, next to your AI app</text>
+</svg>
