@@ -15,8 +15,6 @@ The server runs locally, next to the AI app, and edits files where they sit. It'
 
 You need Node.js 22 or newer. The first run downloads the server through `npx`.
 
-> Work in progress: `@utilitly/mcp` isn't on npm yet, so these commands won't work until it's published. Its `package.json` stays `"private": true` until then, so it can't go out by accident.
-
 The folders after the package name are the only places the server may read and write. Change them to wherever your PDFs live.
 
 **Claude Code**

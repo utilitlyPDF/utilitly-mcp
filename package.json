@@ -1,7 +1,6 @@
 {
   "name": "@utilitly/mcp",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "MCP server that lets AI apps merge, split, rotate, delete, reorder and duplicate PDF pages on your computer. Nothing is uploaded.",
   "keywords": [
     "mcp",
@@ -14,6 +13,10 @@
     "cursor"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/utilitlyPDF/utilitly-mcp.git"
+  },
   "type": "module",
   "bin": {
     "utilitly-mcp": "./dist/index.mjs"
@@ -52,5 +55,8 @@
     "typescript": "^6.0.3",
     "vite": "^8.3.4",
     "vitest": "^4.1.12"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
