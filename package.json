@@ -1,6 +1,7 @@
 {
   "name": "@utilitly/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "com.utilitly/mcp",
   "description": "MCP server that lets AI apps merge, split, rotate, delete, reorder and duplicate PDF pages on your computer. Nothing is uploaded.",
   "keywords": [
     "mcp",

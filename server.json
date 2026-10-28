@@ -1,0 +1,32 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.utilitly/mcp",
+  "title": "Utilitly PDF",
+  "description": "Merge, split, rotate, delete, reorder and duplicate PDF pages on your computer. Nothing is uploaded.",
+  "websiteUrl": "https://utilitly.com",
+  "repository": {
+    "url": "https://github.com/utilitlyPDF/utilitly-mcp",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@utilitly/mcp",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "valueHint": "folder",
+          "description": "A folder the server may read and write, such as ~/Documents. Repeat it to allow more folders.",
+          "format": "filepath",
+          "isRequired": true,
+          "isRepeated": true
+        }
+      ]
+    }
+  ]
+}
