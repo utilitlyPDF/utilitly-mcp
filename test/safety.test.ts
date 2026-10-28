@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { readFileSync, symlinkSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, symlinkSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { call, closeClients, connect, makePdf, pageOrder, removeTempDirs, tempDir, text, writeFiles } from './helpers'
 
@@ -122,5 +122,56 @@ describe('allowed folders', () => {
     writeFiles(parent, { 'docs/a.pdf': await makePdf(1), 'docs-private/b.pdf': await makePdf(1) })
     const result = await call(await connect({ allowedFolders: [join(parent, 'docs')] }), 'pdf_info', { path: join(parent, 'docs-private', 'b.pdf') })
     expect(text(result)).toMatch(/^OUTSIDE_ALLOWED_FOLDERS: /)
+  })
+})
+
+describe('size limits', () => {
+  it('refuses duplicate_pages that would add more than 10,000 pages, and writes nothing', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(2) })
+    const result = await call(await connect(), 'duplicate_pages', { path: file, pages: '1-2', copies: 5001 })
+    expect(result.isError).toBe(true)
+    expect(text(result)).toMatch(/^TOO_LARGE: /)
+    expect(readdirSync(dir)).toEqual(['a.pdf'])
+  })
+
+  it('still lets duplicate_pages add exactly 10,000 pages', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(2) })
+    const result = await call(await connect(), 'duplicate_pages', { path: file, pages: '1-2', copies: 5000 })
+    expect(result.structuredContent).toMatchObject({ pages: 10_002 })
+  })
+
+  it('refuses a split into more than 1,000 files, and writes nothing', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(1) })
+    const result = await call(await connect(), 'split_pdf', { path: file, ranges: '1,'.repeat(1001) })
+    expect(result.isError).toBe(true)
+    expect(text(result)).toMatch(/^TOO_MANY_FILES: /)
+    expect(readdirSync(dir)).toEqual(['a.pdf'])
+  })
+
+  it('refuses overlapping split ranges that would add more than 10,000 pages', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(20) })
+    const result = await call(await connect(), 'split_pdf', { path: file, ranges: Array(600).fill('1-end').join(',') })
+    expect(text(result)).toMatch(/^TOO_LARGE: /)
+    expect(readdirSync(dir)).toEqual(['a.pdf'])
+  })
+
+  it('refuses merging one file listed so often that it would add more than 10,000 pages', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(1) })
+    const result = await call(await connect(), 'merge_pdfs', { paths: Array(10_002).fill(file) })
+    expect(text(result)).toMatch(/^TOO_LARGE: /)
+    expect(readdirSync(dir)).toEqual(['a.pdf'])
+  })
+
+  it('still merges a file listed twice', async () => {
+    const dir = tempDir()
+    const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(2) })
+    const result = await call(await connect(), 'merge_pdfs', { paths: [file, file] })
+    expect(result.structuredContent).toMatchObject({ pages: 4 })
+    expect(await pageOrder(join(dir, 'a-merged.pdf'))).toEqual([1, 2, 1, 2])
   })
 })

@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/server'
 import * as z from 'zod/v4'
 import { PDFDocument } from 'pdf-lib'
 import { mergePdfs } from '@utilitly/pdf-merge'
-import { extractPages, splitPdf } from '@utilitly/pdf-split'
+import { extractPages, parsePageRange, splitPdf } from '@utilitly/pdf-split'
 import { rotatePdf } from '@utilitly/pdf-rotate'
 import { deletePages } from '@utilitly/pdf-delete-pages'
 import { reorderPages } from '@utilitly/pdf-reorder-pages'
@@ -36,6 +36,36 @@ const label = (pages: number) => `${pages} ${pages === 1 ? 'page' : 'pages'}`
 
 async function pageCount(bytes: Uint8Array): Promise<number> {
   return (await PDFDocument.load(bytes, { updateMetadata: false })).getPageCount()
+}
+
+/**
+ * One call can add at most this many pages beyond what its input files hold,
+ * so repeated copies, overlapping ranges or a file listed over and over can't
+ * use up memory or disk.
+ */
+const MAX_ADDED_PAGES = 10_000
+/** split_pdf writes at most this many files, or one per page for longer PDFs. */
+const MAX_SPLIT_FILES = 1_000
+
+const count = (n: number) => n.toLocaleString('en-US')
+
+/** The page count for a size check, or null to let the engine report a bad file. */
+async function countForCheck(bytes: Uint8Array): Promise<number | null> {
+  try {
+    return (await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false })).getPageCount()
+  } catch {
+    return null
+  }
+}
+
+/** Runs before the engine, so nothing is built or written when it fails. */
+function checkSize(outputPages: number, inputPages: number): void {
+  if (outputPages > inputPages + MAX_ADDED_PAGES) {
+    throw new ToolError(
+      'TOO_LARGE',
+      `That would make ${count(outputPages)} pages from ${count(inputPages)}. One call can add at most ${count(MAX_ADDED_PAGES)} pages, so ask for fewer copies, ranges or files.`,
+    )
+  }
 }
 
 /** Engine errors carry a code such as NO_PAGES; pass it on with the message. */
@@ -132,9 +162,16 @@ export function createServer(options: ServerOptions = {}): McpServer {
       const inputs = []
       for (const path of paths) inputs.push(await files.inputFile(path))
       const target = output_path === undefined ? undefined : await files.outputFile(output_path)
+      // A file listed more than once is read and counted once.
+      const contents = new Map<string, Uint8Array>()
+      for (const input of inputs) if (!contents.has(input)) contents.set(input, await files.read(input))
+      const pagesIn = new Map<string, number>()
+      for (const [input, bytes] of contents) pagesIn.set(input, (await countForCheck(bytes)) ?? 0)
+      const total = (list: Iterable<string>) => [...list].reduce((sum, input) => sum + (pagesIn.get(input) ?? 0), 0)
+      checkSize(total(inputs), total(contents.keys()))
       let bytes: Uint8Array
       try {
-        bytes = await mergePdfs(await Promise.all(inputs.map(input => files.read(input))))
+        bytes = await mergePdfs(inputs.map(input => contents.get(input)!))
       } catch (error) {
         throw toToolError(error)
       }
@@ -153,7 +190,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     'split_pdf',
     {
       title: 'Split a PDF',
-      description: `Splits a PDF into one new file per comma-separated range, named -part1, -part2 and so on. "1-2, 3-end" gives two files. Never replaces an existing file; the input is left unchanged.`,
+      description: `Splits a PDF into one new file per comma-separated range, named -part1, -part2 and so on. "1-2, 3-end" gives two files, and one call writes at most 1,000 (or one per page for longer PDFs). Never replaces an existing file; the input is left unchanged.`,
       inputSchema: z.object({
         path: z.string().describe(PATH),
         ranges: z.string().describe('Ranges such as "1-2, 3, 4-end": one output file per comma-separated part'),
@@ -168,9 +205,22 @@ export function createServer(options: ServerOptions = {}): McpServer {
     async ({ path, ranges, output_folder }) => {
       const input = await files.inputFile(path)
       const folder = output_folder === undefined ? dirname(input) : await files.outputFolder(output_folder)
+      const bytes = await files.read(input)
+      const pagesIn = await countForCheck(bytes)
+      if (pagesIn !== null) {
+        const selections = ranges.split(',').map(s => s.trim()).filter(Boolean)
+        const maxFiles = Math.max(MAX_SPLIT_FILES, pagesIn)
+        if (selections.length > maxFiles) {
+          throw new ToolError(
+            'TOO_MANY_FILES',
+            `${count(selections.length)} ranges would write ${count(selections.length)} files. One split writes at most ${count(maxFiles)}, so use fewer, longer ranges.`,
+          )
+        }
+        checkSize(selections.reduce((sum, part) => sum + parsePageRange(part, pagesIn).length, 0), pagesIn)
+      }
       let parts: Uint8Array[]
       try {
-        parts = await splitPdf(await files.read(input), ranges)
+        parts = await splitPdf(bytes, ranges)
       } catch (error) {
         throw toToolError(error)
       }
@@ -244,7 +294,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
     'duplicate_pages',
     {
       title: 'Duplicate pages',
-      description: `Adds copies of the selected pages, right after each one or all at the end, named with -duplicated. Copies share the page's images, so the file barely grows. ${NEW_FILE}`,
+      description: `Adds copies of the selected pages, right after each one or all at the end, named with -duplicated. Copies share the page's images, so the file barely grows. One call can add at most 10,000 pages. ${NEW_FILE}`,
       inputSchema: z.object({
         path: z.string().describe(PATH),
         pages: z.string().describe(`Pages to copy, ${EXAMPLES}`),
@@ -256,7 +306,11 @@ export function createServer(options: ServerOptions = {}): McpServer {
       annotations: WRITES,
     },
     async ({ path, pages, copies, placement, output_path }) =>
-      single(path, output_path, 'duplicated', bytes => duplicatePages(bytes, pages, { copies, placement })),
+      single(path, output_path, 'duplicated', async bytes => {
+        const pagesIn = await countForCheck(bytes)
+        if (pagesIn !== null) checkSize(pagesIn + parsePageRange(pages, pagesIn).length * (copies ?? 1), pagesIn)
+        return duplicatePages(bytes, pages, { copies, placement })
+      }),
   )
 
   return server

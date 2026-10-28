@@ -17,10 +17,12 @@ You need Node.js 22 or newer. The first run downloads the server through `npx`.
 
 > Work in progress: `@utilitly/mcp` isn't on npm yet, so these commands won't work until it's published. Its `package.json` stays `"private": true` until then, so it can't go out by accident.
 
+The folders after the package name are the only places the server may read and write. Change them to wherever your PDFs live.
+
 **Claude Code**
 
 ```sh
-claude mcp add utilitly -- npx -y @utilitly/mcp
+claude mcp add utilitly -- npx -y @utilitly/mcp ~/Documents ~/Downloads ~/Desktop
 ```
 
 **Claude Desktop**: open Settings, then Developer, then Edit Config, and add this to `claude_desktop_config.json`. Restart Claude Desktop afterwards.
@@ -30,7 +32,7 @@ claude mcp add utilitly -- npx -y @utilitly/mcp
   "mcpServers": {
     "utilitly": {
       "command": "npx",
-      "args": ["-y", "@utilitly/mcp"]
+      "args": ["-y", "@utilitly/mcp", "~/Documents", "~/Downloads", "~/Desktop"]
     }
   }
 }
@@ -38,17 +40,13 @@ claude mcp add utilitly -- npx -y @utilitly/mcp
 
 **Cursor**: put the same `mcpServers` block in `~/.cursor/mcp.json`.
 
-**Anything else** that can start a local (stdio) MCP server: the command is `npx` with the arguments `-y @utilitly/mcp`.
+**Anything else** that can start a local (stdio) MCP server: the command is `npx` with the arguments `-y @utilitly/mcp`, followed by the folders.
 
-### Keep it to certain folders
+### About the folder list
 
-List folders after the package name and the server will only read and write inside them:
+The check happens after symlinks are resolved, so a link inside an allowed folder can't lead somewhere else.
 
-```sh
-claude mcp add utilitly -- npx -y @utilitly/mcp ~/Documents ~/Downloads
-```
-
-In a JSON config, add them to `args`: `["-y", "@utilitly/mcp", "~/Documents"]`. The check happens after symlinks are resolved, so a link inside an allowed folder can't lead somewhere else.
+Leave the folders out and the server may use any file you can. It still never overwrites or deletes anything, and it never shows the AI what's inside a PDF. But an AI misled by something it read elsewhere could copy any of your PDFs into any folder, so list folders unless you need it everywhere.
 
 ## Try it in 30 seconds
 
@@ -84,6 +82,7 @@ Problems come back to the AI as a short code and a sentence it can act on, such 
 - Paths must be absolute or start with `~/`, so the AI can't stumble into the wrong folder through a relative path.
 - With folders listed at install, nothing outside them can be read or written.
 - Password-protected PDFs are refused rather than altered. `pdf_info` reports when a file is locked.
+- One call can add at most 10,000 pages beyond what its input files hold, and one split writes at most 1,000 files (or one per page for longer PDFs). A mistaken request, like a hundred million copies, is refused before anything is built.
 
 ## Why nothing is uploaded
 
