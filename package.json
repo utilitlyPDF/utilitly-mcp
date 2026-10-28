@@ -37,12 +37,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
-    "@utilitly/pdf-delete-pages": "file:../utilitly-oss/packages/pdf-delete-pages",
-    "@utilitly/pdf-duplicate-pages": "file:../utilitly-oss/packages/pdf-duplicate-pages",
-    "@utilitly/pdf-merge": "file:../utilitly-oss/packages/pdf-merge",
-    "@utilitly/pdf-reorder-pages": "file:../utilitly-oss/packages/pdf-reorder-pages",
-    "@utilitly/pdf-rotate": "file:../utilitly-oss/packages/pdf-rotate",
-    "@utilitly/pdf-split": "file:../utilitly-oss/packages/pdf-split",
+    "@utilitly/pdf-delete-pages": "^0.1.0",
+    "@utilitly/pdf-duplicate-pages": "^0.1.0",
+    "@utilitly/pdf-merge": "^0.1.0",
+    "@utilitly/pdf-reorder-pages": "^0.1.0",
+    "@utilitly/pdf-rotate": "^0.1.0",
+    "@utilitly/pdf-split": "^0.1.0",
     "pdf-lib": "^1.17.1",
     "zod": "^4.6.7"
   },
