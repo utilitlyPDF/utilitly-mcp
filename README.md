@@ -52,6 +52,8 @@ gemini mcp add -s user utilitly npx -- -y @utilitly/mcp ~/Documents ~/Downloads 
 
 **Anything else** that can start a local (stdio) MCP server: the command is `npx` with the arguments `-y @utilitly/mcp`, followed by the folders.
 
+The server is also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as `com.utilitly/mcp`, so apps and directories that read the registry can find it by that name.
+
 ### About the folder list
 
 The check happens after symlinks are resolved, so a link inside an allowed folder can't lead somewhere else.
