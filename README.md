@@ -7,7 +7,7 @@
 
 # @utilitly/mcp
 
-A PDF MCP server for Claude, Cursor and any other app that speaks the Model Context Protocol. Ask your AI to merge, split, rotate, delete, reorder or duplicate pages, and it does the work with PDF files on your own computer.
+A PDF MCP server for Claude, the ChatGPT desktop app, Codex, Gemini CLI, Cursor and any other app that can run a local MCP server. Ask your AI to merge, split, rotate, delete, reorder or duplicate pages, and it does the work with PDF files on your own computer.
 
 The server runs locally, next to the AI app, and edits files where they sit. It's built on Utilitly's open-source PDF engines, ported from the free tools on [utilitly.com](https://utilitly.com), and it never replaces a file: every result is a new PDF beside the original.
 
@@ -37,6 +37,18 @@ claude mcp add utilitly -- npx -y @utilitly/mcp ~/Documents ~/Downloads ~/Deskto
 ```
 
 **Cursor**: put the same `mcpServers` block in `~/.cursor/mcp.json`.
+
+**ChatGPT desktop app and Codex** share one setup, so adding the server to either one adds it to both. In the ChatGPT app, open Settings, then MCP servers, then Add server. Choose STDIO, enter the command `npx` with the arguments `-y @utilitly/mcp ~/Documents ~/Downloads ~/Desktop`, save, and restart. From the Codex CLI:
+
+```sh
+codex mcp add utilitly -- npx -y @utilitly/mcp ~/Documents ~/Downloads ~/Desktop
+```
+
+**Gemini CLI**: everything after `--` goes to `npx`, and `-s user` makes the server available in every folder you start Gemini in.
+
+```sh
+gemini mcp add -s user utilitly npx -- -y @utilitly/mcp ~/Documents ~/Downloads ~/Desktop
+```
 
 **Anything else** that can start a local (stdio) MCP server: the command is `npx` with the arguments `-y @utilitly/mcp`, followed by the folders.
 
