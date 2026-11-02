@@ -7,6 +7,8 @@
 
 # @utilitly/mcp
 
+[![Utilitly PDF MCP server](https://mcprush.com/badge/utilitly-pdf-mcp/card.svg)](https://mcprush.com/to/utilitly-pdf-mcp?ref=badge)
+
 A PDF MCP server for Claude, the ChatGPT desktop app, Codex, Gemini CLI, Cursor and any other app that can run a local MCP server. Ask your AI to merge, split, rotate, delete, reorder or duplicate pages, and it does the work with PDF files on your own computer.
 
 The server runs locally, next to the AI app, and edits files where they sit. It's built on Utilitly's open-source PDF engines, ported from the free tools on [utilitly.com](https://utilitly.com), and it never replaces a file: every result is a new PDF beside the original.
