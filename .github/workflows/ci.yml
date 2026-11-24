@@ -26,12 +26,18 @@ jobs:
         with:
           path: utilitly-mcp
           persist-credentials: false
-      # The server is built on the engines from utilitly-pdf, checked out next
-      # to it as ../utilitly-oss, the same layout as on a developer's machine.
+      # The server is built on the engines from utilitly-pdf and utilitly-images,
+      # checked out next to it as ../utilitly-oss and ../utilitly-images, the
+      # same layout as on a developer's machine.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: utilitlyPDF/utilitly-pdf
           path: utilitly-oss
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: utilitlyPDF/utilitly-images
+          path: utilitly-images
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -40,8 +46,12 @@ jobs:
           cache-dependency-path: |
             utilitly-mcp/package-lock.json
             utilitly-oss/package-lock.json
-      - name: Build the engines
+            utilitly-images/package-lock.json
+      - name: Build the PDF engines
         working-directory: utilitly-oss
+        run: npm ci && npm run build
+      - name: Build the image engine
+        working-directory: utilitly-images
         run: npm ci && npm run build
       - run: npm ci
       # Leak check, typecheck, build, then every test, including the built

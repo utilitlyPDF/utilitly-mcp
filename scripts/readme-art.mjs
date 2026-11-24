@@ -116,7 +116,7 @@ function noNetwork(t) {
   return svg({
     width: 840, height: 232,
     title: '@utilitly/mcp: the no-network test',
-    desc: 'A test blocks every way to reach the network, then runs all eight tools. Each one completes and the test passes: no connection was opened.',
+    desc: 'A test blocks every way to reach the network, then runs every tool. Each one completes and the test passes: no connection was opened.',
     css: `
 .cmd { animation: cmd ${total}s steps(1, end) infinite; }
 @keyframes cmd { 0% { opacity: 0; } 3% { opacity: 1; } 94% { opacity: 0; } }

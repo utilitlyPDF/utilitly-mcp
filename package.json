@@ -1,8 +1,9 @@
 {
   "name": "@utilitly/mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "mcpName": "com.utilitly/mcp",
-  "description": "MCP server that lets AI apps merge, split, rotate, delete, reorder and duplicate PDF pages on your computer. Nothing is uploaded.",
+  "description": "MCP server that lets AI apps merge, split, rotate, delete, reorder and duplicate PDF pages, and crop images, on your computer. Nothing is uploaded.",
+  "homepage": "https://utilitly.com/developers",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -10,6 +11,8 @@
     "pdf",
     "merge-pdf",
     "split-pdf",
+    "image",
+    "crop-image",
     "claude",
     "cursor"
   ],
@@ -38,6 +41,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
+    "@utilitly/image-crop": "file:../utilitly-images/packages/image-crop",
     "@utilitly/pdf-delete-pages": "^0.1.0",
     "@utilitly/pdf-duplicate-pages": "^0.1.0",
     "@utilitly/pdf-merge": "^0.1.0",

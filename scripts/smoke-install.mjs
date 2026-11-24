@@ -1,7 +1,8 @@
 // Real-install check: stages @utilitly/mcp exactly as it will be published
-// (see release-manifest.mjs), lints it, packs it next to the six engine
-// packages from ../utilitly-oss, installs everything into a brand-new project,
-// then starts the installed command and drives every tool over stdio.
+// (see release-manifest.mjs), lints it, packs it next to the engine packages
+// (the PDF ones from ../utilitly-oss, the image one from ../utilitly-images),
+// installs everything into a brand-new project, then starts the installed
+// command and drives every tool over stdio.
 //
 //   npm run smoke
 
@@ -10,6 +11,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { crc32, deflateSync } from 'node:zlib'
 import { PDFDocument } from 'pdf-lib'
 import { Client } from '@modelcontextprotocol/client'
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
@@ -29,6 +31,30 @@ async function samplePdf(pages) {
   const doc = await PDFDocument.create()
   for (let n = 1; n <= pages; n++) doc.addPage([600 + n, 800])
   return doc.save()
+}
+
+/** A width × height RGBA PNG written with node:zlib, independent of the image engine. */
+function samplePng(width, height) {
+  const stride = width * 4 + 1
+  const raw = Buffer.alloc(stride * height)
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) raw.set([40, 120, 200, 255], y * stride + 1 + x * 4)
+  const chunk = (type, data) => {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data])
+    const out = Buffer.alloc(body.length + 8)
+    out.writeUInt32BE(data.length, 0)
+    body.copy(out, 4)
+    out.writeUInt32BE(crc32(body), body.length + 4)
+    return out
+  }
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(width, 0)
+  ihdr.writeUInt32BE(height, 4)
+  ihdr[8] = 8
+  ihdr[9] = 6
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
+  ])
 }
 
 const order = async file => (await PDFDocument.load(readFileSync(file))).getPages().map(p => Math.round(p.getWidth()) - 600)
@@ -56,13 +82,15 @@ try {
   const undeclared = [...new Set(used)].filter(dep => !declared.includes(dep))
   report(undeclared.length === 0, `every import in dist is a dependency${undeclared.length ? `: missing ${undeclared.join(', ')}` : ''}`)
 
-  // 2. Tarballs: the six engines from ../utilitly-oss, plus this package.
+  // 2. Tarballs: the engines from their repos next to this one, plus this package.
   const tarballs = join(work, 'tarballs')
   mkdirSync(tarballs)
   const engines = Object.entries(manifest.dependencies).filter(([name]) => name.startsWith('@utilitly/')).map(([name]) => name)
   for (const name of engines) {
-    const dir = join(ROOT, '..', 'utilitly-oss', 'packages', name.slice('@utilitly/'.length))
-    if (!existsSync(join(dir, 'dist'))) throw new Error(`${name} isn't built: run npm run build in ../utilitly-oss first`)
+    const folder = name.slice('@utilitly/'.length)
+    const repo = folder.startsWith('image-') ? 'utilitly-images' : 'utilitly-oss'
+    const dir = join(ROOT, '..', repo, 'packages', folder)
+    if (!existsSync(join(dir, 'dist'))) throw new Error(`${name} isn't built: run npm run build in ../${repo} first`)
     run(npm, ['pack', '--pack-destination', tarballs], dir)
   }
   const packed = JSON.parse(run(npm, ['pack', '--json', '--pack-destination', tarballs], stage))[0]
@@ -80,11 +108,12 @@ try {
   mkdirSync(pdfs)
   writeFileSync(join(pdfs, 'a.pdf'), await samplePdf(4))
   writeFileSync(join(pdfs, 'b.pdf'), await samplePdf(2))
+  writeFileSync(join(pdfs, 'photo.png'), samplePng(64, 48))
   const client = new Client({ name: 'smoke', version: '1.0.0' })
   await client.connect(new StdioClientTransport({ command: join(app, 'node_modules', '.bin', 'utilitly-mcp'), args: [pdfs], stderr: 'pipe' }))
   try {
     const { tools } = await client.listTools()
-    report(tools.length === 8, `the installed server lists ${tools.length} tools`)
+    report(tools.length === 9, `the installed server lists ${tools.length} tools`)
     const a = join(pdfs, 'a.pdf')
     const checks = [
       ['pdf_info', { path: a }, async r => r.structuredContent?.pages === 4],
@@ -95,6 +124,7 @@ try {
       ['delete_pages', { path: a, pages: '1' }, async () => (await order(join(pdfs, 'a-trimmed.pdf'))).join() === '2,3,4'],
       ['reorder_pages', { path: a, order: [4, 3, 2, 1] }, async () => (await order(join(pdfs, 'a-reordered.pdf'))).join() === '4,3,2,1'],
       ['duplicate_pages', { path: a, pages: '2' }, async () => (await order(join(pdfs, 'a-duplicated.pdf'))).join() === '1,2,2,3,4'],
+      ['crop_image', { path: join(pdfs, 'photo.png'), aspect: '1:1' }, async () => readFileSync(join(pdfs, 'photo-cropped.png')).readUInt32BE(16) === 48],
     ]
     for (const [name, args, ok] of checks) {
       const result = await client.callTool({ name, arguments: args })

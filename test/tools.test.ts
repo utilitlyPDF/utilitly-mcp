@@ -9,10 +9,10 @@ afterEach(async () => {
 })
 
 describe('the tool list', () => {
-  it('offers the eight tools, each described for the model', async () => {
+  it('offers the nine tools, each described for the model', async () => {
     const { tools } = await (await connect()).listTools()
     expect(tools.map(t => t.name).sort()).toEqual([
-      'delete_pages', 'duplicate_pages', 'extract_pages', 'merge_pdfs',
+      'crop_image', 'delete_pages', 'duplicate_pages', 'extract_pages', 'merge_pdfs',
       'pdf_info', 'reorder_pages', 'rotate_pdf', 'split_pdf',
     ])
     for (const tool of tools) expect(tool.description?.length, tool.name).toBeGreaterThan(40)

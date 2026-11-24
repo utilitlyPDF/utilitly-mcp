@@ -4,7 +4,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import net from 'node:net'
 import dns from 'node:dns'
-import { call, closeClients, connect, makePdf, removeTempDirs, tempDir, writeFiles } from './helpers'
+import { call, closeClients, connect, makePdf, makePng, removeTempDirs, tempDir, writeFiles } from './helpers'
 
 afterEach(async () => {
   vi.restoreAllMocks()
@@ -21,7 +21,7 @@ describe('network', () => {
     expect(() => net.connect(80, 'example.com')).toThrow('network used')
 
     const dir = tempDir()
-    const files = writeFiles(dir, { 'a.pdf': await makePdf(4), 'b.pdf': await makePdf(2) })
+    const files = writeFiles(dir, { 'a.pdf': await makePdf(4), 'b.pdf': await makePdf(2), 'photo.png': makePng(64, 48) })
     const client = await connect()
     const runs: Array<[string, Record<string, unknown>]> = [
       ['pdf_info', { path: files['a.pdf'] }],
@@ -32,6 +32,7 @@ describe('network', () => {
       ['delete_pages', { path: files['a.pdf'], pages: '1' }],
       ['reorder_pages', { path: files['a.pdf'], order: [4, 3, 2, 1] }],
       ['duplicate_pages', { path: files['a.pdf'], pages: '2' }],
+      ['crop_image', { path: files['photo.png'], aspect: '1:1', format: 'jpeg' }],
     ]
     for (const [name, args] of runs) {
       const result = await call(client, name, args)

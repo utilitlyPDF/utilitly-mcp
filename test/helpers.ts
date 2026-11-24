@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { crc32, deflateSync } from 'node:zlib'
 import { PDFDocument, degrees } from 'pdf-lib'
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client'
 import { createServer, type ServerOptions } from '../src/server'
@@ -31,6 +32,45 @@ export async function pageOrder(file: string): Promise<number[]> {
 export async function pageRotations(file: string): Promise<number[]> {
   const doc = await PDFDocument.load(await readFile(file))
   return doc.getPages().map(page => page.getRotation().angle)
+}
+
+/** A width × height RGBA PNG, written with node:zlib so the tests don't depend on the image engine. */
+export function makePng(width: number, height: number, rgba: [number, number, number, number] = [40, 120, 200, 255]): Uint8Array {
+  const stride = width * 4 + 1
+  const raw = Buffer.alloc(stride * height)
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) raw.set(rgba, y * stride + 1 + x * 4)
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data])
+    const out = Buffer.alloc(body.length + 8)
+    out.writeUInt32BE(data.length, 0)
+    body.copy(out, 4)
+    out.writeUInt32BE(crc32(body), body.length + 4)
+    return out
+  }
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(width, 0)
+  ihdr.writeUInt32BE(height, 4)
+  ihdr[8] = 8
+  ihdr[9] = 6
+  return new Uint8Array(Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
+  ]))
+}
+
+/** A PNG file's width and height, from its header. */
+export async function pngSize(file: string): Promise<[number, number]> {
+  const bytes = await readFile(file)
+  return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)]
+}
+
+/** 'jpeg', 'png' or 'webp', from a file's first bytes. */
+export async function imageFormat(file: string): Promise<string> {
+  const b = await readFile(file)
+  if (b[0] === 0xff && b[1] === 0xd8) return 'jpeg'
+  if (b[0] === 0x89 && b[1] === 0x50) return 'png'
+  if (b.subarray(8, 12).toString('latin1') === 'WEBP') return 'webp'
+  return 'unknown'
 }
 
 /** Encrypts with qpdf, for tests that need a password-protected input. */

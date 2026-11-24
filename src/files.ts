@@ -71,20 +71,24 @@ export class Workspace {
     return real
   }
 
-  /** Validates an explicit output path before any work is done. */
-  async outputFile(path: string): Promise<string> {
+  /**
+   * Validates an explicit output path before any work is done. It must end in
+   * one of `extensions` (".pdf" for the PDF tools).
+   */
+  async outputFile(path: string, extensions: readonly string[] = ['.pdf']): Promise<string> {
     const expanded = expandPath(path)
-    if (extname(expanded).toLowerCase() !== '.pdf') {
-      throw new ToolError('INVALID_PATH', `output_path must end in .pdf, not "${basename(expanded)}".`)
+    if (!extensions.includes(extname(expanded).toLowerCase())) {
+      throw new ToolError('INVALID_PATH', `output_path must end in ${extensions.join(' or ')}, not "${basename(expanded)}".`)
     }
     return join(await this.outputFolder(dirname(expanded)), basename(expanded))
   }
 }
 
-/** "report" for /docs/report.pdf: the name results are based on. */
-export function stem(path: string): string {
+/** "report" for /docs/report.pdf: the name results are based on. Only the given extensions are dropped. */
+export function stem(path: string, extensions: readonly string[] = ['.pdf']): string {
   const name = basename(path)
-  return extname(name).toLowerCase() === '.pdf' ? name.slice(0, -4) : name
+  const ext = extname(name)
+  return extensions.includes(ext.toLowerCase()) ? name.slice(0, -ext.length) : name
 }
 
 /** Creates `path` only if nothing is there yet. False if a file already exists. */
@@ -116,15 +120,15 @@ export async function writeExact(path: string, bytes: Uint8Array): Promise<strin
 }
 
 /**
- * Writes `files` into `folder` as `<base><suffix>.pdf` each, adding -2, -3 ...
- * to every name until the whole set fits without replacing anything.
+ * Writes `files` into `folder` as `<base><suffix><extension>` each, adding
+ * -2, -3 ... to every name until the whole set fits without replacing anything.
  */
-export async function writeAsNew(folder: string, files: Array<{ base: string; bytes: Uint8Array }>): Promise<string[]> {
+export async function writeAsNew(folder: string, files: Array<{ base: string; bytes: Uint8Array }>, extension = '.pdf'): Promise<string[]> {
   for (let n = 1; n <= 9999; n++) {
     const written: string[] = []
     let clash = false
     for (const file of files) {
-      const path = join(folder, `${file.base}${n === 1 ? '' : `-${n}`}.pdf`)
+      const path = join(folder, `${file.base}${n === 1 ? '' : `-${n}`}${extension}`)
       if (await writeIfAbsent(path, file.bytes)) {
         written.push(path)
       } else {

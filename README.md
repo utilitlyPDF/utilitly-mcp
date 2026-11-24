@@ -9,15 +9,17 @@
 
 [![Utilitly PDF MCP server](https://mcprush.com/badge/utilitly-pdf-mcp/card.svg)](https://mcprush.com/to/utilitly-pdf-mcp?ref=badge)
 
-A PDF MCP server for Claude, the ChatGPT desktop app, Codex, Gemini CLI, Cursor and any other app that can run a local MCP server. Ask your AI to merge, split, rotate, delete, reorder or duplicate pages, and it does the work with PDF files on your own computer.
+A PDF and image MCP server for Claude, the ChatGPT desktop app, Codex, Gemini CLI, Cursor and any other app that can run a local MCP server. Ask your AI to merge, split, rotate, delete, reorder or duplicate pages, or to crop a photo, and it does the work with files on your own computer.
 
-The server runs locally, next to the AI app, and edits files where they sit. It's built on Utilitly's open-source PDF engines, ported from the free tools on [utilitly.com](https://utilitly.com), and it never replaces a file: every result is a new PDF beside the original.
+The server runs locally, next to the AI app, and edits files where they sit. It's built on Utilitly's open-source PDF and image engines, which do the same jobs as the free tools on [utilitly.com](https://utilitly.com), and it never replaces a file: every result is a new file beside the original.
+
+Install steps for each app and answers to common questions: [Utilitly MCP server](https://utilitly.com/developers).
 
 ## Install
 
 You need Node.js 22 or newer. The first run downloads the server through `npx`.
 
-The folders after the package name are the only places the server may read and write. Change them to wherever your PDFs live.
+The folders after the package name are the only places the server may read and write. Change them to wherever your PDFs and photos live.
 
 **Claude Code**
 
@@ -60,7 +62,7 @@ The server is also listed in the [official MCP Registry](https://registry.modelc
 
 The check happens after symlinks are resolved, so a link inside an allowed folder can't lead somewhere else.
 
-Leave the folders out and the server may use any file you can. It still never overwrites or deletes anything, and it never shows the AI what's inside a PDF. But an AI misled by something it read elsewhere could copy any of your PDFs into any folder, so list folders unless you need it everywhere.
+Leave the folders out and the server may use any file you can. It still never overwrites or deletes anything, and it never shows the AI what's inside a PDF or an image. But an AI misled by something it read elsewhere could copy your PDFs and images into any folder, so list folders unless you need it everywhere.
 
 ## Try it in 30 seconds
 
@@ -71,6 +73,7 @@ Once it's installed, ask in plain words and use full paths:
 - "Split ~/Documents/handbook.pdf into pages 1-12, 13-30 and 31 to the end."
 - "Pages 2 to 4 of ~/Desktop/scan.pdf are sideways; turn them the right way up."
 - "How many pages does ~/Documents/contract.pdf have, and is it locked?"
+- "Crop ~/Desktop/team.jpg to a square for a profile picture."
 
 ## Tools
 
@@ -84,6 +87,7 @@ Once it's installed, ask in plain words and use full paths:
 | `delete_pages` | Removes pages; at least one has to stay. | `<name>-trimmed.pdf` |
 | `reorder_pages` | Puts every page in a new order. | `<name>-reordered.pdf` |
 | `duplicate_pages` | Adds copies after each page or at the end. | `<name>-duplicated.pdf` |
+| `crop_image` | Crops a JPEG, PNG or WebP to a rectangle in pixels, or to the middle at a shape like `"1:1"` or `"16:9"`. | `<name>-cropped.jpg`, `.png` or `.webp` |
 
 Results land in the same folder as the input. Every writing tool also takes an optional `output_path`, and `split_pdf` an optional `output_folder`. Page selections read like `"2"`, `"1-3, 5"` or `"4-end"`.
 
@@ -103,20 +107,21 @@ Problems come back to the AI as a short code and a sentence it can act on, such 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/no-network-dark.svg">
-    <img alt="A test blocks every way to reach the network, then runs all eight tools; each completes and the test passes with no connection opened" src="./assets/no-network-light.svg">
+    <img alt="A test blocks every way to reach the network, then runs every tool; each completes and the test passes with no connection opened" src="./assets/no-network-light.svg">
   </picture>
 </p>
 
-The PDF work happens inside this server, on your machine, with no network code anywhere in it. `test/network.test.ts` proves that on every change: it makes opening a connection, looking up a host name and calling `fetch` all throw, then runs every tool, and they all succeed.
+The PDF and image work happens inside this server, on your machine, with no network code anywhere in it. `test/network.test.ts` proves that on every change: it makes opening a connection, looking up a host name and calling `fetch` all throw, then runs every tool, and they all succeed.
 
-Your AI app still talks to its model as usual. That conversation includes whatever you type, file paths included, and each tool's short reply: the paths it wrote, page counts and file sizes. This server never puts the contents of a PDF into the conversation.
+Your AI app still talks to its model as usual. That conversation includes whatever you type, file paths included, and each tool's short reply: the paths it wrote, page counts and file sizes. This server never puts the contents of a PDF or an image into the conversation.
 
 ## Good to know
 
 - `merge_pdfs`, `split_pdf`, `extract_pages`, `delete_pages`, `reorder_pages` and `duplicate_pages` build fresh PDFs, so bookmarks, document properties and working form fields aren't carried into the result. `rotate_pdf` keeps the whole document.
 - Images and fonts shared between pages stay shared, so results don't balloon in size.
+- `crop_image` keeps the input's format unless asked for another, turns a phone photo the right way up first, and leaves out metadata such as the GPS location. JPEG and WebP quality can be set from 40 to 100.
 - To check what's running, `npx -y @utilitly/mcp --version` prints the version and `--help` the usage.
 
 ## License
 
-MIT. Built on the [@utilitly PDF engines](https://www.npmjs.com/org/utilitly) and [pdf-lib](https://github.com/Hopding/pdf-lib) (both MIT), and the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) (Apache-2.0).
+MIT. Built on the [@utilitly PDF and image engines](https://www.npmjs.com/org/utilitly) and [pdf-lib](https://github.com/Hopding/pdf-lib) (all MIT), the image codecs from [jSquash](https://github.com/jamsinclair/jSquash) and Google's Squoosh (Apache-2.0), and the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) (Apache-2.0).

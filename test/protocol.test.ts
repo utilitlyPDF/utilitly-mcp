@@ -21,7 +21,7 @@ describe('2026-07-28 protocol', () => {
     await client.connect(transport)
     try {
       const { tools } = await client.listTools()
-      expect(tools).toHaveLength(8)
+      expect(tools).toHaveLength(9)
       const dir = tempDir()
       const { 'a.pdf': file } = writeFiles(dir, { 'a.pdf': await makePdf(3) })
       const result = await client.callTool({ name: 'reorder_pages', arguments: { path: file, order: [3, 2, 1] } })

@@ -30,7 +30,7 @@ describe('the utilitly-mcp command', () => {
     const client = await start()
     try {
       const { tools } = await client.listTools()
-      expect(tools).toHaveLength(8)
+      expect(tools).toHaveLength(9)
       const result = await client.callTool({ name: 'merge_pdfs', arguments: { paths: [files['a.pdf'], files['b.pdf']] } })
       expect(result.isError).toBeFalsy()
       expect(await pageOrder(join(dir, 'a-merged.pdf'))).toEqual([1, 2, 1])

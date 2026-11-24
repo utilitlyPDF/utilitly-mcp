@@ -1,8 +1,9 @@
-// The MCP server: eight tools over the @utilitly PDF engines.
+// The MCP server: nine tools over the @utilitly PDF and image engines.
 
 import { McpServer } from '@modelcontextprotocol/server'
 import * as z from 'zod/v4'
 import { PDFDocument } from 'pdf-lib'
+import { cropImage } from '@utilitly/image-crop'
 import { mergePdfs } from '@utilitly/pdf-merge'
 import { extractPages, parsePageRange, splitPdf } from '@utilitly/pdf-split'
 import { rotatePdf } from '@utilitly/pdf-rotate'
@@ -71,8 +72,23 @@ function checkSize(outputPages: number, inputPages: number): void {
 /** Engine errors carry a code such as NO_PAGES; pass it on with the message. */
 function toToolError(error: unknown): unknown {
   const e = error as { name?: string; code?: unknown; message?: string }
-  if (e?.name === 'PdfError' && typeof e.code === 'string') return new ToolError(e.code, e.message ?? '')
+  if ((e?.name === 'PdfError' || e?.name === 'ImageError') && typeof e.code === 'string') return new ToolError(e.code, e.message ?? '')
   return error
+}
+
+type ImageFormat = 'jpeg' | 'png' | 'webp'
+const IMAGE_LABEL: Record<ImageFormat, string> = { jpeg: 'JPEG', png: 'PNG', webp: 'WebP' }
+/** The extensions an output_path may have for each format; the first is used for new names. */
+const IMAGE_EXTENSIONS: Record<ImageFormat, readonly string[]> = { jpeg: ['.jpg', '.jpeg'], png: ['.png'], webp: ['.webp'] }
+/** Dropped from the input's name when naming the result: photo.jpg gives photo-cropped.jpg. */
+const IMAGE_INPUT_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
+
+/** The format the bytes are in, from their first bytes, or null to let the engine report what they are. */
+function imageFormatOf(bytes: Uint8Array): ImageFormat | null {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg'
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png'
+  if (Buffer.from(bytes.subarray(0, 4)).toString('latin1') === 'RIFF' && Buffer.from(bytes.subarray(8, 12)).toString('latin1') === 'WEBP') return 'webp'
+  return null
 }
 
 export function createServer(options: ServerOptions = {}): McpServer {
@@ -311,6 +327,59 @@ export function createServer(options: ServerOptions = {}): McpServer {
         if (pagesIn !== null) checkSize(pagesIn + parsePageRange(pages, pagesIn).length * (copies ?? 1), pagesIn)
         return duplicatePages(bytes, pages, { copies, placement })
       }),
+  )
+
+  server.registerTool(
+    'crop_image',
+    {
+      title: 'Crop an image',
+      description: `Crops a JPEG, PNG or WebP image to a rectangle, or to the largest centred area of a shape such as 1:1, 4:3 or 16:9. Coordinates are pixels of the photo as it is shown upright. The result keeps the input's format unless format is given, and is named with -cropped. Writes the result as a new file next to the input (or to output_path) and never replaces an existing file; the input is left unchanged.`,
+      inputSchema: z.object({
+        path: z.string().describe('Absolute path to a JPEG, PNG or WebP image, or one starting with ~/.'),
+        aspect: z.union([z.enum(['1:1', '4:3', '16:9']), z.number().positive()]).optional()
+          .describe('Crop to the middle of the image at this shape: "1:1", "4:3", "16:9", or width ÷ height as a number. Give this, or x, y, width and height.'),
+        x: z.number().int().optional().describe('Left edge of the rectangle, in pixels from the left'),
+        y: z.number().int().optional().describe('Top edge of the rectangle, in pixels from the top'),
+        width: z.number().int().optional().describe('Width of the rectangle, in pixels'),
+        height: z.number().int().optional().describe('Height of the rectangle, in pixels'),
+        format: z.enum(['jpeg', 'jpg', 'png', 'webp']).optional().describe("Write this format instead of the input's"),
+        quality: z.number().optional().describe('40 to 100, for JPEG and WebP output. Default 90.'),
+        output_path: z.string().optional().describe('Optional absolute path for the new image, ending in an extension for its format (.jpg, .png or .webp). It must not exist yet. By default the result goes next to the input.'),
+      }),
+      outputSchema: z.object({
+        output_path: z.string().describe('Where the new image was written'),
+        format: z.enum(['jpeg', 'png', 'webp']).describe('The format it was written in'),
+        file_size_bytes: z.number().int(),
+      }),
+      annotations: WRITES,
+    },
+    async ({ path, aspect, x, y, width, height, format, quality, output_path }) => {
+      const rectangle = [x, y, width, height]
+      const wholeRectangle = rectangle.every(v => v !== undefined)
+      const anyRectangle = rectangle.some(v => v !== undefined)
+      if (aspect === undefined ? !wholeRectangle : anyRectangle) {
+        throw new ToolError('INVALID_OPTIONS', 'Give either aspect, or all of x, y, width and height.')
+      }
+      const input = await files.inputFile(path)
+      const bytes = await files.read(input)
+      // The output format names the file; when it can't be told, the engine reports what the file is.
+      const outFormat: ImageFormat | null = format === undefined ? imageFormatOf(bytes) : format === 'jpg' ? 'jpeg' : format
+      const target = output_path === undefined || outFormat === null ? undefined : await files.outputFile(output_path, IMAGE_EXTENSIONS[outFormat])
+      let cropped: Uint8Array
+      try {
+        const area = aspect !== undefined ? { aspect } : { x: x!, y: y!, width: width!, height: height! }
+        cropped = await cropImage(bytes, area, { format, quality })
+      } catch (error) {
+        throw toToolError(error)
+      }
+      const written = target
+        ? await writeExact(target, cropped)
+        : (await writeAsNew(dirname(input), [{ base: `${stem(input, IMAGE_INPUT_EXTENSIONS)}-cropped`, bytes: cropped }], IMAGE_EXTENSIONS[outFormat!][0]))[0]
+      return {
+        content: [{ type: 'text', text: `Wrote ${written} (${IMAGE_LABEL[outFormat!]}, ${cropped.length} bytes).` }],
+        structuredContent: { output_path: written, format: outFormat!, file_size_bytes: cropped.length },
+      }
+    },
   )
 
   return server
